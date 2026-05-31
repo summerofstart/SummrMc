@@ -1,0 +1,12 @@
+FROM eclipse-temurin:21-jdk-jammy AS runtime
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    numactl procps lsof && rm -rf /var/lib/apt/lists/*
+
+COPY SummerMC.jar /opt/SummerMC.jar
+COPY server.jar /data/server.jar
+WORKDIR /data
+
+EXPOSE 25565
+
+ENTRYPOINT ["java", "-javaagent:/opt/SummerMC.jar", "-jar", "/data/server.jar", "--nogui"]

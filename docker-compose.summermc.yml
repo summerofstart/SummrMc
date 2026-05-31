@@ -1,0 +1,15 @@
+services:
+  minecraft:
+    build: .
+    container_name: mc-summermc
+    ports:
+      - "25565:25565"
+    volumes:
+      - ./world:/data/world
+      - ./plugins:/data/plugins
+    environment:
+      - MEMORY=12G
+    cap_add:
+      - SYS_ADMIN
+      - IPC_LOCK
+    restart: unless-stopped
