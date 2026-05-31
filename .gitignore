@@ -1,9 +1,13 @@
 # SummerMC — do not distribute server JARs or build artifacts
 server.jar
+server.paperclip.jar
 paper-server.jar
 folia-server.jar
 *.log
 *.tmp
+cache/
+libraries/
+versions/
 
 # Build artifacts
 mc-optimizer/target/

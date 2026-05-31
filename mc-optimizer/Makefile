@@ -1,4 +1,4 @@
-.PHONY: all rust agent jar clean docker docker-run docker-light docker-folia quick
+.PHONY: all rust agent launcher install-launcher jar clean docker docker-run docker-light docker-folia quick
 
 # ============================================================================
 # McOpt v2.0 — All-in-one Folia-aware Minecraft Optimizer
@@ -10,6 +10,8 @@
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 AGENT_JAR := maven-agent/target/mc-opt-agent.jar
 CARGO_TARGET := /tmp/mcopt-target
+LAUNCHER_CLASSES := /tmp/mcopt-launcher-classes
+LAUNCHER_JAR := /tmp/server-launcher.jar
 
 # ===========================================================================
 # All-in-one JAR — builds Rust .so, copies into resources, then Maven shade
@@ -28,6 +30,25 @@ jar: rust copy-so agent
 quick: copy-so agent
 	@echo "⚡ Quick rebuild (using existing .so)"
 	@ls -lh "$(ROOT_DIR)/$(AGENT_JAR)"
+
+# ===========================================================================
+# server.jar launcher — runs the real server jar with sudo-less JVM tuning
+# ===========================================================================
+launcher:
+	@echo "☕ Building server.jar launcher..."
+	rm -rf "$(LAUNCHER_CLASSES)"
+	mkdir -p "$(LAUNCHER_CLASSES)"
+	javac --release 21 -d "$(LAUNCHER_CLASSES)" "$(ROOT_DIR)/launcher/src/com/mcopt/ServerLauncher.java"
+	jar cfe "$(LAUNCHER_JAR)" com.mcopt.ServerLauncher -C "$(LAUNCHER_CLASSES)" .
+	@echo "✓ Launcher: $(LAUNCHER_JAR)"
+
+install-launcher: launcher
+	@if [ ! -f "$(ROOT_DIR)/../server.paperclip.jar" ]; then \
+	    mv "$(ROOT_DIR)/../server.jar" "$(ROOT_DIR)/../server.paperclip.jar"; \
+	fi
+	cp "$(LAUNCHER_JAR)" "$(ROOT_DIR)/../server.jar"
+	@echo "✓ Installed launcher as $(ROOT_DIR)/../server.jar"
+	@echo "  Real server jar: $(ROOT_DIR)/../server.paperclip.jar"
 
 # ===========================================================================
 # Rust native library (cdylib = .so)
@@ -92,6 +113,7 @@ clean:
 	cd "$(ROOT_DIR)/maven-agent" && mvn clean
 	rm -f "$(ROOT_DIR)/maven-agent/src/main/resources/native/linux-x86-64/libmc_native_opt.so"
 	rm -f "$(ROOT_DIR)/docker/mc-opt-agent.jar"
+	rm -rf "$(LAUNCHER_CLASSES)" "$(LAUNCHER_JAR)"
 	@echo "✓ Clean complete"
 
 # ===========================================================================
@@ -101,6 +123,7 @@ info:
 	@echo "McOpt v2.0 — All-in-one Folia-aware Minecraft Optimizer"
 	@echo ""
 	@echo "   Build:     make jar"
+	@echo "   Launcher:  make install-launcher"
 	@echo "   Docker:    make docker-run"
 	@echo "   Tune host: sudo make tune-host (Paper)"
 	@echo "              sudo make tune-folia (Folia)"
