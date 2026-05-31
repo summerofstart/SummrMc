@@ -24,14 +24,14 @@ public final class McOptJavaAgent {
         // Show recommended flags that should be present
         boolean hasZGC = ManagementFactory.getRuntimeMXBean().getInputArguments()
             .stream().anyMatch(arg -> arg.contains("+UseZGC"));
-        boolean hasLargePages = ManagementFactory.getRuntimeMXBean().getInputArguments()
-            .stream().anyMatch(arg -> arg.contains("+UseLargePages"));
+        boolean hasHugePages = ManagementFactory.getRuntimeMXBean().getInputArguments()
+            .stream().anyMatch(arg -> arg.contains("+UseLargePages") || arg.contains("+UseTransparentHugePages"));
 
         if (!hasZGC) {
             log.warning("[McOpt-Agent] ⚠ ZGC not detected. Add -XX:+UseZGC -XX:+ZGenerational for best performance");
         }
-        if (!hasLargePages) {
-            log.warning("[McOpt-Agent] ⚠ LargePages not detected. Add -XX:+UseLargePages for better memory performance");
+        if (!hasHugePages) {
+            log.warning("[McOpt-Agent] ⚠ Huge pages not detected. Add -XX:+UseTransparentHugePages for sudo-less memory tuning");
         }
 
         // Try to load native (from JAR or system) and apply kernel tuning at agent level
