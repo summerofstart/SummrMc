@@ -1,0 +1,18 @@
+# SummerMC — Build Artifacts
+SummerMC.jar
+build/
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rust (downloaded during build)
+/tmp/summermc-*

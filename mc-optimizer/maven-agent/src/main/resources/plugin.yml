@@ -1,0 +1,19 @@
+name: McOpt
+version: 2.0.0
+main: com.mcopt.FoliaPlugin
+api-version: 1.21
+folia-supported: true
+authors: [McOpt Team]
+description: Ultra-low-layer Minecraft server optimizer — Folia-aware
+website: https://github.com/mcopt
+
+commands:
+  mcopt:
+    description: McOpt status and control commands
+    usage: /mcopt <status|gc|profile|flags>
+    permission: mcopt.admin
+
+permissions:
+  mcopt.admin:
+    description: Allows using all /mcopt commands
+    default: op

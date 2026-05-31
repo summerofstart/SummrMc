@@ -1,0 +1,27 @@
+# McOpt Configuration
+# Tuning profile: default, aggressive, balanced, low_memory, folia
+# Folia = multicore region-based threading (auto-detected)
+tuning-profile: folia
+
+# CPU affinity mask (hex, e.g., 0x3F for CPUs 0-5)
+# Empty = no CPU pinning (let kernel decide)
+cpu-affinity-mask: ""
+
+# GC monitoring interval in seconds
+# Folia: 60s (more allocation per tick)
+# Paper: 300s
+gc-monitor-interval-seconds: 300
+
+# Bytecode optimization at class load (requires -javaagent)
+bytecode-optimization: true
+
+# Folia: Number of physical cores to reserve for network/GC threads
+# Region threads will use cores starting after this offset
+reserved-cores: 2
+
+# Folia: Region thread pinning interval in seconds
+# How often to scan for new region threads (default: 2s)
+region-pin-interval-seconds: 2
+
+# Enable debug logging
+debug: false

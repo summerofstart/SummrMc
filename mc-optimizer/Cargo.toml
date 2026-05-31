@@ -1,0 +1,25 @@
+[package]
+name = "mc-native-opt"
+version = "1.0.0"
+edition = "2021"
+description = "Ultra-low-layer Minecraft server native optimizer — CPU pinning, hugepages, cgroup v2, I/O scheduler, sysctl tuning, Folia region-thread affinity"
+
+# Build both: shared library for JNI, binary for standalone CLI
+[lib]
+name = "mc_native_opt"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "mc-native-opt"
+path = "src/main.rs"
+
+[dependencies]
+libc = "0.2"
+jni = { version = "0.21", features = ["invocation"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

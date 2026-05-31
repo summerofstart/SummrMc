@@ -1,0 +1,26 @@
+# SummerMC — do not distribute server JARs or build artifacts
+server.jar
+paper-server.jar
+folia-server.jar
+*.log
+*.tmp
+
+# Build artifacts
+mc-optimizer/target/
+mc-optimizer/maven-agent/target/
+mc-optimizer/docker/mc-data/
+SummerMC/SummerMC.jar
+
+# Rust build (FAT32 workaround)
+/tmp/mcopt-target/
+/tmp/summermc-*
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
