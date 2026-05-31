@@ -84,14 +84,21 @@ if [ -f "$AGENT_JAR" ]; then
     jar xf "$AGENT_JAR"
     rm -rf META-INF/maven 2>/dev/null || true
 
-    # Compile SummerMC using agent classes as classpath
+    # Compile SummerMC (+ Benchmark if present) using agent classes as classpath
+    ALL_SOURCES=$(find "$CLASSES" -name '*.java' | tr '\n' ' ')
     javac -d "$CLASSES" --release 21 \
         -cp "$STAGING" \
-        "$CLASSES/com/summermc/SummerMC.java" 2>&1 | grep -v "^Note:" || {
-        echo "   ⚠  Fallback: compiling standalone..."
-        javac -d "$CLASSES" --release 21 \
-            "$CLASSES/com/summermc/SummerMC.java" \
-            "$CLASSES/com/mcopt/NativeLoader.java" 2>&1 | grep -v "^Note:" || true
+        $ALL_SOURCES 2>&1 | grep -v "^Note:" || {
+        echo "   ⚠  Retrying without --release (for JMX access)..."
+        javac -d "$CLASSES" -source 21 -target 21 \
+            -cp "$STAGING" \
+            $ALL_SOURCES 2>&1 | grep -v "^Note:" || {
+            echo "   ⚠  Removing Benchmark.java and retrying..."
+            rm -f "$CLASSES/com/summermc/Benchmark.java"
+            javac -d "$CLASSES" --release 21 \
+                -cp "$STAGING" \
+                "$CLASSES/com/summermc/SummerMC.java" 2>&1 | grep -v "^Note:" || true
+        }
     }
 else
     # Standalone: compile both SummerMC and NativeLoader together
