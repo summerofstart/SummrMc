@@ -1,6 +1,6 @@
 # ============================================================================
 # docker-compose.yml — McOpt Minecraft Server with Folia-aware optimizer
-# All-in-one JAR: native .so is embedded inside mc-opt-agent.jar
+# Unified launcher image: /opt/server.jar embeds mc-opt-agent.jar.
 # Usage: docker compose up -d
 # ============================================================================
 
@@ -16,19 +16,14 @@ services:
       - ./mc-data:/data
     environment:
       # JVM flags (optional — McOpt auto-tunes if not set)
-      # - JVM_FLAGS=-Xmx8G -Xms8G -XX:+UseZGC
+      # - MC_HEAP_MB=8192
+      # - MC_JVM_EXTRA=-XX:+UseZGC
 
       # Force Folia mode (auto-detected from JAR if not set)
       # - FOLIA_FORCE=1
 
-      # Debug mode (logs GC to /data/gc.log)
-      - DEBUG=0
-
       # Server JAR path inside /data (auto-detected if not set)
-      # - SERVER_JAR=/data/folia-server.jar
-    cap_add:
-      - SYS_ADMIN   # Required for kernel tuning (sysctl, scheduler)
-      - IPC_LOCK    # Required for hugepages
+      # - SERVER_JAR=/data/server.paperclip.jar
     restart: unless-stopped
     stop_grace_period: 30s
     deploy:
@@ -39,11 +34,6 @@ services:
         reservations:
           cpus: '4'
           memory: 4G
-    security_opt:
-      - seccomp:unconfined
-      - apparmor:unconfined
-    tmpfs:
-      - /dev/hugepages:rw,size=1G
     healthcheck:
       test: ["CMD-SHELL", "lsof -i :25565 || exit 1"]
       interval: 30s

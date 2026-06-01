@@ -1,9 +1,11 @@
 package com.mcopt;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -12,16 +14,17 @@ import java.util.jar.JarFile;
 public final class ServerLauncher {
     private static final String REAL_SERVER = "server.paperclip.jar";
     private static final String AGENT = "mc-optimizer/maven-agent/target/mc-opt-agent.jar";
+    private static final String EMBEDDED_AGENT = "/mc-opt-agent.jar";
 
     private ServerLauncher() {
     }
 
     public static void main(String[] args) throws Exception {
         Path root = locateRoot();
-        Path server = root.resolve(REAL_SERVER);
+        Path server = realServerJar(root);
         if (!Files.isRegularFile(server)) {
-            System.err.println("Missing " + REAL_SERVER + " next to server.jar");
-            System.err.println("Move the real Paper/Purpur/Folia jar to " + REAL_SERVER + ".");
+            System.err.println("Missing real Minecraft server jar: " + server);
+            System.err.println("Set MC_REAL_SERVER_JAR or SERVER_JAR, or move the real Paper/Purpur/Folia jar to " + root.resolve(REAL_SERVER) + ".");
             System.exit(2);
         }
 
@@ -34,8 +37,8 @@ public final class ServerLauncher {
         command.add("-Xmx" + heapMb + "m");
         command.addAll(jvmFlags(folia));
 
-        Path agent = root.resolve(AGENT);
-        if (Files.isRegularFile(agent) && !"1".equals(System.getenv("MC_SKIP_AGENT"))) {
+        Path agent = agentJar(root);
+        if (agent != null && Files.isRegularFile(agent) && !"1".equals(System.getenv("MC_SKIP_AGENT"))) {
             command.add("-javaagent:" + agent.toAbsolutePath());
         }
 
@@ -54,7 +57,7 @@ public final class ServerLauncher {
         System.out.println("[McOpt] Launching optimized Minecraft server");
         System.out.println("[McOpt] Mode: " + (folia ? "Folia" : "Paper/Purpur"));
         System.out.println("[McOpt] Heap: " + heapMb + " MB");
-        System.out.println("[McOpt] Agent: " + (Files.isRegularFile(agent) ? agent : "none"));
+        System.out.println("[McOpt] Agent: " + (agent != null && Files.isRegularFile(agent) ? agent : "none"));
 
         Process process = new ProcessBuilder(command)
             .directory(root.toFile())
@@ -75,6 +78,39 @@ public final class ServerLauncher {
             return jar.getEntry("io/papermc/paper/threadedregions/RegionizedServer.class") != null;
         } catch (IOException ignored) {
             return false;
+        }
+    }
+
+    private static Path realServerJar(Path root) {
+        String explicit = System.getenv("MC_REAL_SERVER_JAR");
+        if (explicit == null || explicit.isBlank()) {
+            explicit = System.getenv("SERVER_JAR");
+        }
+        if (explicit != null && !explicit.isBlank()) {
+            return Path.of(explicit).toAbsolutePath();
+        }
+        return root.resolve(REAL_SERVER);
+    }
+
+    private static Path agentJar(Path root) {
+        Path external = root.resolve(AGENT);
+        if (Files.isRegularFile(external)) {
+            return external;
+        }
+
+        try (InputStream in = ServerLauncher.class.getResourceAsStream(EMBEDDED_AGENT)) {
+            if (in == null) {
+                return null;
+            }
+            Path dir = Path.of(System.getProperty("java.io.tmpdir"), "mcopt");
+            Files.createDirectories(dir);
+            Path embedded = dir.resolve("mc-opt-agent.jar");
+            Files.copy(in, embedded, StandardCopyOption.REPLACE_EXISTING);
+            embedded.toFile().deleteOnExit();
+            return embedded;
+        } catch (IOException e) {
+            System.err.println("[McOpt] Embedded agent unavailable: " + e.getMessage());
+            return null;
         }
     }
 

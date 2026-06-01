@@ -34,11 +34,12 @@ quick: copy-so agent
 # ===========================================================================
 # server.jar launcher — runs the real server jar with sudo-less JVM tuning
 # ===========================================================================
-launcher:
+launcher: agent
 	@echo "☕ Building server.jar launcher..."
 	rm -rf "$(LAUNCHER_CLASSES)"
 	mkdir -p "$(LAUNCHER_CLASSES)"
 	javac --release 21 -d "$(LAUNCHER_CLASSES)" "$(ROOT_DIR)/launcher/src/com/mcopt/ServerLauncher.java"
+	cp "$(ROOT_DIR)/$(AGENT_JAR)" "$(LAUNCHER_CLASSES)/mc-opt-agent.jar"
 	jar cfe "$(LAUNCHER_JAR)" com.mcopt.ServerLauncher -C "$(LAUNCHER_CLASSES)" .
 	@echo "✓ Launcher: $(LAUNCHER_JAR)"
 

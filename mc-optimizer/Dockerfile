@@ -17,31 +17,36 @@ COPY src/ ./src/
 RUN cargo build --release && \
     cp target/release/libmc_native_opt.so /libmc_native_opt.so
 
-# ---- Stage 2: Build Java agent JAR with .so embedded ----
+# ---- Stage 2: Build Java agent and unified server launcher JAR ----
 FROM maven:3.9-eclipse-temurin-21 AS builder-java
 
 WORKDIR /build
 COPY maven-agent/ ./maven-agent/
+COPY launcher/ ./launcher/
 COPY --from=builder-rust /libmc_native_opt.so \
     ./maven-agent/src/main/resources/native/linux-x86-64/libmc_native_opt.so
 
-RUN cd maven-agent && mvn package -DskipTests -q && \
-    cp target/mc-opt-agent.jar /mc-opt-agent.jar
+RUN cd maven-agent && mvn package -DskipTests -q && cd /build && \
+    cp maven-agent/target/mc-opt-agent.jar /mc-opt-agent.jar && \
+    mkdir -p /launcher-classes && \
+    javac --release 21 -d /launcher-classes launcher/src/com/mcopt/ServerLauncher.java && \
+    cp /mc-opt-agent.jar /launcher-classes/mc-opt-agent.jar && \
+    jar cfe /server.jar com.mcopt.ServerLauncher -C /launcher-classes .
 
-# ---- Stage 3: Runtime image — one JAR to rule them all ----
+# ---- Stage 3: Runtime image — unified server launcher plus mounted server jar ----
 FROM eclipse-temurin:21-jdk-jammy AS runtime
 
 LABEL maintainer="McOpt Team"
-LABEL description="Minecraft Server with McOpt Folia-aware optimizer — all-in-one JAR"
+LABEL description="Minecraft Server with McOpt Folia-aware optimizer — unified launcher image"
 
 # Minimal runtime tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     numactl procps lsof && rm -rf /var/lib/apt/lists/*
 
-# Single artifact: the all-in-one JAR
-COPY --from=builder-java /mc-opt-agent.jar /opt/mc-opt-agent.jar
+# Single runnable artifact. Mount the real Paper/Purpur/Folia jar into /data.
+COPY --from=builder-java /server.jar /opt/server.jar
 
-# Entrypoint (Folia-aware)
+# Entrypoint
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
