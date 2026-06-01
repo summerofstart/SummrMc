@@ -140,6 +140,9 @@ public final class ServerLauncher {
         if (directUrl != null && !directUrl.isBlank()) {
             uri = URI.create(directUrl);
         } else {
+            if (version.equalsIgnoreCase("latest")) {
+                version = latestVersion(client, project);
+            }
             if (build == null || build.isBlank() || build.equalsIgnoreCase("latest")) {
                 build = latestBuild(client, project, version);
             }
@@ -164,6 +167,32 @@ public final class ServerLauncher {
         }
         Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
         return target;
+    }
+
+    private static String latestVersion(HttpClient client, String project) throws Exception {
+        URI uri = URI.create("https://api.papermc.io/v2/projects/" + project);
+        HttpRequest request = HttpRequest.newBuilder(uri)
+            .header("User-Agent", "McOpt-ServerLauncher")
+            .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new IOException("Failed to query latest PaperMC version: HTTP " + response.statusCode() + " from " + uri);
+        }
+
+        Matcher matcher = Pattern.compile("\"versions\"\\s*:\\s*\\[(.*?)]", Pattern.DOTALL).matcher(response.body());
+        if (!matcher.find()) {
+            throw new IOException("No versions found for " + project);
+        }
+
+        Matcher versions = Pattern.compile("\"([^\"]+)\"").matcher(matcher.group(1));
+        String latest = null;
+        while (versions.find()) {
+            latest = versions.group(1);
+        }
+        if (latest == null) {
+            throw new IOException("No versions found for " + project);
+        }
+        return latest;
     }
 
     private static String latestBuild(HttpClient client, String project, String version) throws Exception {
