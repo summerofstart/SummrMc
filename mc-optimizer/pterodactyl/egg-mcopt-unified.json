@@ -1,0 +1,102 @@
+{
+  "_comment": "DO NOT EDIT: FILE GENERATED MANUALLY FOR MCOPT UNIFIED",
+  "meta": {
+    "version": "PTDL_v2",
+    "update_url": null
+  },
+  "exported_at": "2026-06-01T00:00:00+00:00",
+  "name": "McOpt Unified",
+  "author": "summerofstart",
+  "description": "Runs the unified McOpt server.jar launcher with the optimizer agent embedded. The install script downloads server.jar, and the launcher downloads Paper on first start when server.paperclip.jar is missing.",
+  "features": null,
+  "docker_images": {
+    "Java 21": "ghcr.io/pterodactyl/yolks:java_21"
+  },
+  "file_denylist": [],
+  "startup": "java -jar {{SERVER_JARFILE}}",
+  "config": {
+    "files": "{\r\n  \"server.properties\": {\r\n    \"parser\": \"properties\",\r\n    \"find\": {\r\n      \"server-ip\": \"0.0.0.0\",\r\n      \"server-port\": \"{{server.build.default.port}}\"\r\n    }\r\n  }\r\n}",
+    "startup": "{\r\n  \"done\": \")! For help, type \"\r\n}",
+    "logs": "{}",
+    "stop": "stop"
+  },
+  "scripts": {
+    "installation": {
+      "script": "#!/bin/bash\r\nset -e\r\ncd /mnt/server\r\nmkdir -p /mnt/server\r\ncurl -L -o server.jar https://github.com/summerofstart/SummrMc/releases/latest/download/server.jar\r\nif [ ! -f eula.txt ]; then echo \"eula=true\" > eula.txt; fi\r\necho \"McOpt server.jar installed. Start the server; Paper will download automatically if server.paperclip.jar is missing.\"\r\n",
+      "container": "ghcr.io/pterodactyl/installers:debian",
+      "entrypoint": "bash"
+    }
+  },
+  "variables": [
+    {
+      "name": "Launcher Jar File",
+      "description": "The unified McOpt launcher jar from the release assets.",
+      "env_variable": "SERVER_JARFILE",
+      "default_value": "server.jar",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|regex:/^([\\w\\d._-]+)(\\.jar)$/",
+      "field_type": "text"
+    },
+    {
+      "name": "Real Server Jar",
+      "description": "The real Paper, Purpur, or Folia server jar. It will be downloaded automatically when missing.",
+      "env_variable": "REAL_SERVER_JAR",
+      "default_value": "server.paperclip.jar",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|regex:/^([\\w\\d._\\/-]+)(\\.jar)$/",
+      "field_type": "text"
+    },
+    {
+      "name": "PaperMC Project",
+      "description": "PaperMC project to download when Real Server Jar is missing. Common values: paper, folia.",
+      "env_variable": "PAPER_PROJECT",
+      "default_value": "paper",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Minecraft Version",
+      "description": "Minecraft version to download from PaperMC when Real Server Jar is missing.",
+      "env_variable": "PAPER_VERSION",
+      "default_value": "1.21.8",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "PaperMC Build",
+      "description": "PaperMC build number, or latest.",
+      "env_variable": "PAPER_BUILD",
+      "default_value": "latest",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Extra JVM Flags",
+      "description": "Optional extra JVM flags appended by the McOpt launcher.",
+      "env_variable": "MC_JVM_EXTRA",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string",
+      "field_type": "text"
+    },
+    {
+      "name": "Fixed Heap MB",
+      "description": "Optional heap override. Leave empty to use 90% of Pterodactyl SERVER_MEMORY.",
+      "env_variable": "MC_HEAP_MB",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|integer|min:1024",
+      "field_type": "text"
+    }
+  ]
+}
